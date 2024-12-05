@@ -15,6 +15,13 @@ Contains the complete project for the batch processing in data-intensive applica
     git clone https://github.com/Logrimm99/Project-Data-Engineering.git
 
 
+#### 1.5 Get the dataset from
+  https://www.kaggle.com/datasets/bwandowando/2-million-formerly-twitter-google-reviews?select=TWITTER_REVIEWS.csv
+
+#### Copy it into the producer folder, make sure the path is as follows (from the main directory of the project)
+  producer/TWITTER_REVIEWS.csv
+
+
 ### 2. To run the pipeline:
 
 #### 2.1 Move to the main directory of the project
