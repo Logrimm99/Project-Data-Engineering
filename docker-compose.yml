@@ -26,7 +26,7 @@ services:
         KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
         KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/secrets/kafka_jaas.conf"
       volumes:
-        - ./secrets:/etc/secrets  # Mount the directory containing kafka_jaas.conf
+        - ./secrets:/etc/secrets 
       ports:
         - "9092:9092"
 
@@ -43,16 +43,14 @@ services:
     build: ./processor
     depends_on:
       - kafka
-#      kafka:
-#        condition: service_healthy
     environment:
       SPARK_DRIVER_HOST: processor
       BOOTSTRAP_SERVERS: kafka:9092
       KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/secrets/kafka_jaas.conf"
     volumes:
-      - ./secrets:/etc/secrets  # Mount the JAAS configuration file
+      - ./secrets:/etc/secrets 
     ports:
-      - "4040:4040"  # Spark UI
+      - "4040:4040"
 
 
   consumer:
