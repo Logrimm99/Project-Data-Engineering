@@ -1,0 +1,97 @@
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/secrets/zookeeper_jaas.conf"
+    volumes:
+      - ./secrets:/etc/secrets
+    ports:
+      - "2181:2181"
+
+  kafka:
+      image: confluentinc/cp-kafka:latest
+      depends_on:
+        - zookeeper
+      environment:
+        KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+        KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+        KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+        KAFKA_LISTENERS: SASL_PLAINTEXT://0.0.0.0:9092
+        KAFKA_ADVERTISED_LISTENERS: SASL_PLAINTEXT://kafka:9092
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: SASL_PLAINTEXT:SASL_PLAINTEXT
+        KAFKA_INTER_BROKER_LISTENER_NAME: SASL_PLAINTEXT
+        KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
+        KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
+        KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/secrets/kafka_jaas.conf"
+      volumes:
+        - ./secrets:/etc/secrets  # Mount the directory containing kafka_jaas.conf
+      ports:
+        - "9092:9092"
+
+  producer:
+      build: ./producer
+      depends_on:
+        - kafka
+      environment:
+        BOOTSTRAP_SERVERS: kafka:9092
+        KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/secrets/kafka_jaas.conf"
+
+
+  processor:
+    build: ./processor
+    depends_on:
+      - kafka
+#      kafka:
+#        condition: service_healthy
+    environment:
+      SPARK_DRIVER_HOST: processor
+      BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/secrets/kafka_jaas.conf"
+    volumes:
+      - ./secrets:/etc/secrets  # Mount the JAAS configuration file
+    ports:
+      - "4040:4040"  # Spark UI
+
+
+  consumer:
+    build: ./consumer
+    depends_on:
+      - kafka
+    environment:
+      BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/secrets/kafka_jaas.conf"
+
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U user" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+    volumes:
+      - ./pgadmin_data:/var/lib/pgadmin
+      - ./servers.json:/pgadmin4/servers.json
+
+
+volumes:
+  pgadmin-data:
+
